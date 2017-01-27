@@ -115,7 +115,7 @@ def add_hosts_to_cluster():
 
         if cmd.success != True:
             print "cm_host_install failed: " + cmd.resultMessage
-            exit(0)
+            exit(1)
 
     print "Host install finish, agents installed"
     hosts = []
@@ -1001,12 +1001,16 @@ def setup_hdfs_ha():
             # hdfs-HTTPFS
             cdh.create_service_role(hdfs, "HTTPFS", [x for x in hosts if x.id == 0][0])
             # Configure HUE service dependencies
-            cdh(*['HDFS', 'HIVE', 'HUE', 'ZOOKEEPER']).stop()
+            cdh('HDFS').stop()
+            cdh('ZOOKEEPER').stop()
+
             if hue is not None:
                 hue.update_config(cdh.dependencies_for(hue))
             if hive is not None:
                 check.status_for_command("Update Hive Metastore NameNodes", hive.update_metastore_namenodes())
-            cdh(*['ZOOKEEPER', 'HDFS', 'HIVE', 'HUE']).start()
+
+            cdh('ZOOKEEPER').start()
+            cdh('HDFS').start()
 
     except ApiException as err:
         print " ERROR: %s" % err.message
